@@ -1,5 +1,5 @@
 # hkdump
-yet another hxkcmd. we should define a readable format instead of old-fashioned .kf
+yet another hkxcmd. we should define a readable format instead of old-fashioned .kf
 
 ## Build
 
