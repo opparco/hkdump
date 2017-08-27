@@ -251,22 +251,31 @@ void write(hkStreamWriter *writer, hkaAnimation *anim)
 	transformOut.setSize(numTransforms);
 	floatsOut.setSize(numFloats);
 
+	hkReal timeStep;
+	if (numOriginalFrames == 1)
+		timeStep = 0; // infinity
+	else
+		timeStep = duration / (hkReal)(numOriginalFrames - 1); // should be 0.033333f
+
 	hkReal time = 0.0f;
 
-		/// Get a subset of the first 'maxNumTracks' transform tracks (all tracks from 0 to maxNumTracks-1 inclusive), and the first 'maxNumFloatTracks' float tracks of a pose at a given time.
-	anim->samplePartialTracks(time, numTransforms, transformOut.begin(), numFloats, floatsOut.begin(), HK_NULL);
-	hkaSkeletonUtils::normalizeRotations(transformOut.begin(), numTransforms);
-
-	writer->write(&time, sizeof(hkReal));
-
-	for (int i=0; i<numTransforms; ++i)
+	for (int f=0; f<numOriginalFrames; f++, time += timeStep)
 	{
-		write(writer, transformOut[i]);
-	}
+			/// Get a subset of the first 'maxNumTracks' transform tracks (all tracks from 0 to maxNumTracks-1 inclusive), and the first 'maxNumFloatTracks' float tracks of a pose at a given time.
+		anim->samplePartialTracks(time, numTransforms, transformOut.begin(), numFloats, floatsOut.begin(), HK_NULL);
+		hkaSkeletonUtils::normalizeRotations(transformOut.begin(), numTransforms);
 
-	for (int i=0; i<numFloats; ++i)
-	{
-		writer->write(&floatsOut[i], sizeof(hkReal));
+		writer->write(&time, sizeof(hkReal));
+
+		for (int i=0; i<numTransforms; ++i)
+		{
+			write(writer, transformOut[i]);
+		}
+
+		for (int i=0; i<numFloats; ++i)
+		{
+			writer->write(&floatsOut[i], sizeof(hkReal));
+		}
 	}
 }
 

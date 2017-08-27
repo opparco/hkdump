@@ -261,23 +261,32 @@ void write(hkOstream& o, hkaAnimation *anim)
 	transformOut.setSize(numTransforms);
 	floatsOut.setSize(numFloats);
 
+	hkReal timeStep;
+	if (numOriginalFrames == 1)
+		timeStep = 0; // infinity
+	else
+		timeStep = duration / (hkReal)(numOriginalFrames-1);
+
 	hkReal time = 0.0f;
 
-		/// Get a subset of the first 'maxNumTracks' transform tracks (all tracks from 0 to maxNumTracks-1 inclusive), and the first 'maxNumFloatTracks' float tracks of a pose at a given time.
-	anim->samplePartialTracks(time, numTransforms, transformOut.begin(), numFloats, floatsOut.begin(), HK_NULL);
-	hkaSkeletonUtils::normalizeRotations(transformOut.begin(), numTransforms);
-
-	o.printf("time: %.6f\n", time);
-
-	for (int i=0; i<numTransforms; ++i)
+	for (int i=0; i<numOriginalFrames; ++i, time += timeStep)
 	{
-		o.printf("%d", i);
-		write(o, transformOut[i]);
-	}
+			/// Get a subset of the first 'maxNumTracks' transform tracks (all tracks from 0 to maxNumTracks-1 inclusive), and the first 'maxNumFloatTracks' float tracks of a pose at a given time.
+		anim->samplePartialTracks(time, numTransforms, transformOut.begin(), numFloats, floatsOut.begin(), HK_NULL);
+		hkaSkeletonUtils::normalizeRotations(transformOut.begin(), numTransforms);
 
-	for (int i=0; i<numFloats; ++i)
-	{
-		o.printf("%d %.6f\n", floatsOut[i]);
+		o.printf("time: %.6f\n", time);
+
+		for (int i=0; i<numTransforms; ++i)
+		{
+			o.printf("%d", i);
+			write(o, transformOut[i]);
+		}
+
+		for (int i=0; i<numFloats; ++i)
+		{
+			o.printf("%d %.6f\n", floatsOut[i]);
+		}
 	}
 }
 

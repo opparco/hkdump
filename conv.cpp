@@ -107,28 +107,43 @@ void read(hkIstream& stream, hkaAnimationBinding *binding)
 	anim->m_duration = duration;
 	anim->m_numberOfTransformTracks = numTransforms;
 	anim->m_numberOfFloatTracks = numFloats;
-	anim->m_transforms.setSize(numTransforms, hkQsTransform::getIdentity());
-	anim->m_floats.setSize(numFloats);
+	anim->m_transforms.setSize(numTransforms * numOriginalFrames, hkQsTransform::getIdentity());
+	anim->m_floats.setSize(numFloats * numOriginalFrames);
 
-	hkReal time;
-
-	stream.read(&time, sizeof(hkReal));
-	printf("time: %.6f\n", time);
-
-	for (int i=0; i<numTransforms; i++)
+	for (int f=0; f<numOriginalFrames; f++)
 	{
-		hkVector4 translation;
-		hkQuaternion rotation;
-		hkVector4 scale;
+		hkReal time;
+		stream.read(&time, sizeof(hkReal));
+		printf("time: %.6f\n", time);
 
-		stream.read(&translation, sizeof(hkVector4));
-		stream.read(&rotation.m_vec, sizeof(hkVector4));
-		stream.read(&scale, sizeof(hkVector4));
+		int offTransforms = f * numTransforms;
 
-		hkQsTransform& transform = anim->m_transforms[i];
-		transform.setTranslation(translation);
-		transform.setRotation(rotation);
-		transform.setScale(scale);
+		for (int i=0; i<numTransforms; i++)
+		{
+			hkVector4 translation;
+			hkQuaternion rotation;
+			hkVector4 scale;
+
+			stream.read(&translation, sizeof(hkVector4));
+			stream.read(&rotation.m_vec, sizeof(hkVector4));
+			stream.read(&scale, sizeof(hkVector4));
+
+			hkQsTransform& transform = anim->m_transforms[i + offTransforms];
+			transform.setTranslation(translation);
+			transform.setRotation(rotation);
+			transform.setScale(scale);
+		}
+
+		int offFloats = f * numFloats;
+
+		for (int i=0; i<numFloats; i++)
+		{
+			hkReal g;
+
+			stream.read(&g, sizeof(hkReal));
+
+			anim->m_floats[i + offFloats] = g;
+		}
 	}
 
 	{
