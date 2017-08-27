@@ -285,7 +285,7 @@ void write(hkOstream& o, hkaAnimation *anim)
 
 		for (int i=0; i<numFloats; ++i)
 		{
-			o.printf("%d %.6f\n", floatsOut[i]);
+			o.printf("%d %.6f\n", i, floatsOut[i]);
 		}
 	}
 }
