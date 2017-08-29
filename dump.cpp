@@ -261,15 +261,9 @@ void write(hkOstream& o, hkaAnimation *anim)
 	transformOut.setSize(numTransforms);
 	floatsOut.setSize(numFloats);
 
-	hkReal timeStep;
-	if (numOriginalFrames == 1)
-		timeStep = 0; // infinity
-	else
-		timeStep = duration / (hkReal)(numOriginalFrames-1);
-
 	hkReal time = 0.0f;
 
-	for (int i=0; i<numOriginalFrames; ++i, time += timeStep)
+	for (int f=0; f<numOriginalFrames; ++f, time = (hkReal)f * duration / (hkReal)(numOriginalFrames-1))
 	{
 			/// Get a subset of the first 'maxNumTracks' transform tracks (all tracks from 0 to maxNumTracks-1 inclusive), and the first 'maxNumFloatTracks' float tracks of a pose at a given time.
 		anim->samplePartialTracks(time, numTransforms, transformOut.begin(), numFloats, floatsOut.begin(), HK_NULL);
