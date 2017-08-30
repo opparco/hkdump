@@ -1,14 +1,9 @@
 #include <stdio.h>
 #include <iostream>
 
-#include <shlwapi.h>
-
 #include <Common/Base/keycode.cxx> 
 #include <Common/Base/Config/hkProductFeatures.cxx>
 
-#include <Common/Base/hkBase.h>
-#include <Common/Base/System/hkBaseSystem.h>
-#include <Common/Base/System/Error/hkDefaultError.h>
 #include <Common/Base/Memory/System/hkMemorySystem.h>
 #include <Common/Base/Memory/System/Util/hkMemoryInitUtil.h>
 #include <Common/Base/Memory/Allocator/Malloc/hkMallocAllocator.h>
@@ -18,10 +13,8 @@
 #include <Common/Base/System/Io/OStream/hkOStream.h>
 #include <Common/Base/System/Io/Writer/hkStreamWriter.h>
 
-#include <Common/Base/Reflection/Registry/hkDynamicClassNameRegistry.h>
+//#include <Common/Base/Reflection/Registry/hkDynamicClassNameRegistry.h>
 #include <Common/Base/Reflection/Registry/hkDefaultClassNameRegistry.h>
-
-#include <Common/Base/Container/String/hkStringBuf.h>
 
 // Serialize Loader
 #include <Common/Serialize/Util/hkSerializeUtil.h>
@@ -40,14 +33,12 @@
 
 #include <Animation/Animation/Animation/SplineCompressed/hkaSplineCompressedAnimation.h>
 
-#pragma comment(lib, "shlwapi.lib")
-
 #pragma comment (lib, "hkBase.lib")
 #pragma comment (lib, "hkSerialize.lib")
 #pragma comment (lib, "hkSceneData.lib")
 #pragma comment (lib, "hkInternal.lib")
 #pragma comment (lib, "hkGeometryUtilities.lib")
-#pragma comment (lib, "hkVisualize.lib")
+//o1: #pragma comment (lib, "hkVisualize.lib")
 #pragma comment (lib, "hkCompat.lib")
 #pragma comment (lib, "hkpCollide.lib")
 #pragma comment (lib, "hkpConstraintSolver.lib")
@@ -58,7 +49,7 @@
 #pragma comment (lib, "hkaAnimation.lib")
 #pragma comment (lib, "hkaRagdoll.lib")
 #pragma comment (lib, "hkaInternal.lib")
-#pragma comment (lib, "hkgBridge.lib")
+//o1: #pragma comment (lib, "hkgBridge.lib")
 
 void HK_CALL errorReport(const char* msg, void* userContext)
 {
