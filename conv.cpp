@@ -77,6 +77,97 @@ hkResult hkSerializeUtilSave( hkVariant& root, hkOstream& stream )
 	return res;
 }
 
+void read(hkIstream& stream, hkQsTransform& transform)
+{
+	hkVector4 translation;
+	hkQuaternion rotation;
+	hkVector4 scale;
+
+	stream.read(&translation, sizeof(hkVector4));
+	stream.read(&rotation.m_vec, sizeof(hkVector4));
+	stream.read(&scale, sizeof(hkVector4));
+
+	transform.setTranslation(translation);
+	transform.setRotation(rotation);
+	transform.setScale(scale);
+}
+
+void read(hkIstream& stream, hkaSkeleton *skeleton)
+{
+	{
+		char buf[240];
+		int len = stream.getline(buf, 240, '\0');
+		//printf("len %d\n", len);
+		puts(buf);
+
+		skeleton->m_name = buf;
+	}
+
+	int nparentIndices;
+	stream.read(&nparentIndices, sizeof(int));
+	printf("#parentIndices: %d\n", nparentIndices);
+	skeleton->m_parentIndices.setSize(nparentIndices);
+
+	for (int i=0; i<nparentIndices; ++i)
+	{
+		stream.read(&skeleton->m_parentIndices[i], sizeof(hkInt16));
+	}
+
+	int nbones;
+	stream.read(&nbones, sizeof(int));
+	printf("#nbones: %d\n", nbones);
+	skeleton->m_bones.setSize(nbones);
+
+	for (int i=0; i<nbones; ++i)
+	{
+		char buf[240];
+		int len = stream.getline(buf, 240, '\0');
+		//printf("len %d\n", len);
+		puts(buf);
+
+		skeleton->m_bones[i].m_name = buf;
+	}
+
+	int nreferencePose;
+	stream.read(&nreferencePose, sizeof(int));
+	printf("#nreferencePose: %d\n", nreferencePose);
+	skeleton->m_referencePose.setSize(nreferencePose);
+
+	for (int i=0; i<nreferencePose; ++i)
+	{
+		read(stream, skeleton->m_referencePose[i]);
+	}
+
+	int nreferenceFloats;
+	stream.read(&nreferenceFloats, sizeof(int));
+	printf("#nreferenceFloats: %d\n", nreferenceFloats);
+	skeleton->m_referenceFloats.setSize(nreferenceFloats);
+
+	for (int i=0; i<nreferenceFloats; ++i)
+	{
+		hkReal g;
+
+		stream.read(&g, sizeof(hkReal));
+
+		skeleton->m_referenceFloats[i] = g;
+	}
+
+	int nfloatSlots;
+	stream.read(&nfloatSlots, sizeof(int));
+	printf("#nfloatSlots: %d\n", nfloatSlots);
+	skeleton->m_floatSlots.setSize(nfloatSlots);
+
+	for (int i=0; i<nfloatSlots; ++i)
+	{
+		char buf[240];
+		int len = stream.getline(buf, 240, '\0');
+		//printf("len %d\n", len);
+		puts(buf);
+
+		skeleton->m_floatSlots[i] = buf;
+	}
+}
+
 void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 {
 	int numOriginalFrames;
@@ -110,18 +201,7 @@ void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 
 		for (int i=0; i<numTransforms; i++)
 		{
-			hkVector4 translation;
-			hkQuaternion rotation;
-			hkVector4 scale;
-
-			stream.read(&translation, sizeof(hkVector4));
-			stream.read(&rotation.m_vec, sizeof(hkVector4));
-			stream.read(&scale, sizeof(hkVector4));
-
-			hkQsTransform& transform = anim->m_transforms[i + offTransforms];
-			transform.setTranslation(translation);
-			transform.setRotation(rotation);
-			transform.setScale(scale);
+			read(stream, anim->m_transforms[i + offTransforms]);
 		}
 
 		int offFloats = f * numFloats;
@@ -158,14 +238,18 @@ int save(const char* filename, const char* destname)
 	int nskeletons;
 	stream.read(&nskeletons, sizeof(int));
 
+	int nanimations;
+	stream.read(&nanimations, sizeof(int));
+
 	if (nskeletons != 0)
 	{
+		// TEST
+		hkRefPtr<hkaSkeleton> skeleton = new hkaSkeleton();
+		read(stream, skeleton);
+
 		std::cerr << "Error: #skeletons should be 0 but " << nskeletons << "! Abort.";
 		return 101;
 	}
-
-	int nanimations;
-	stream.read(&nanimations, sizeof(int));
 
 	if (nanimations != 1)
 	{
