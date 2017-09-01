@@ -77,7 +77,7 @@ hkResult hkSerializeUtilSave( hkVariant& root, hkOstream& stream )
 	return res;
 }
 
-void read(hkIstream& stream, hkaAnimationBinding *binding)
+void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 {
 	int numOriginalFrames;
 	hkReal duration;
@@ -94,7 +94,6 @@ void read(hkIstream& stream, hkaAnimationBinding *binding)
 	printf("numTransforms: %d\n", numTransforms);
 	printf("numFloats: %d\n", numFloats);
 
-	hkRefPtr<hkaInterleavedUncompressedAnimation> anim = new hkaInterleavedUncompressedAnimation();
 	anim->m_duration = duration;
 	anim->m_numberOfTransformTracks = numTransforms;
 	anim->m_numberOfFloatTracks = numFloats;
@@ -135,17 +134,6 @@ void read(hkIstream& stream, hkaAnimationBinding *binding)
 
 			anim->m_floats[i + offFloats] = g;
 		}
-	}
-
-	{
-		hkaSplineCompressedAnimation::TrackCompressionParams tparams;
-		hkaSplineCompressedAnimation::AnimationCompressionParams aparams;
-
-		tparams.m_rotationTolerance = 0.001f;
-		tparams.m_rotationQuantizationType = hkaSplineCompressedAnimation::TrackCompressionParams::THREECOMP40;
-
-		hkRefPtr<hkaSplineCompressedAnimation> compressedAnim = new hkaSplineCompressedAnimation( *anim.val(), tparams, aparams ); 
-		binding->m_animation = compressedAnim;
 	}
 }
 
@@ -195,7 +183,20 @@ int save(const char* filename, const char* destname)
 
 	binding->m_originalSkeletonName = "NPC Root [Root]";
 
-	read(stream, binding);
+	hkRefPtr<hkaInterleavedUncompressedAnimation> anim = new hkaInterleavedUncompressedAnimation();
+	read(stream, anim);
+
+	/*
+	 * spline compressed
+	 */
+	hkaSplineCompressedAnimation::TrackCompressionParams tparams;
+	hkaSplineCompressedAnimation::AnimationCompressionParams aparams;
+
+	tparams.m_rotationTolerance = 0.001f;
+	tparams.m_rotationQuantizationType = hkaSplineCompressedAnimation::TrackCompressionParams::THREECOMP40;
+
+	binding->m_animation = new hkaSplineCompressedAnimation( *anim.val(), tparams, aparams ); 
+
 
 	animCont->m_animations.append(&binding->m_animation, 1);
 
