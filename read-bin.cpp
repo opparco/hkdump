@@ -344,6 +344,22 @@ int load(const char* filename)
 		// Stores the optimizer in order to expose its parameters.
 		ozz::animation::offline::AnimationOptimizer optimizer;
 
+		// Translation optimization tolerance, defined as the distance between two
+		// translation values in meters.
+		// default: optimizer.translation_tolerance = 1e-3f;
+
+		// Rotation optimization tolerance, ie: the angle between two rotation values
+		// in radian.
+		// default: optimizer.rotation_tolerance = .1f * ozz::math::kPi / 180.f;
+
+		// Scale optimization tolerance, ie: the norm of the difference of two scales.
+		// default: optimizer.scale_tolerance = 1e-3f;
+
+		// Hierarchical translation optimization tolerance, ie: the maximum error
+		// (distance) that an optimization on a joint is allowed to generate on its
+		// whole child hierarchy.
+		// default: optimizer.hierarchical_tolerance = 1e-3f;
+
 		// Optimzes the raw animation.
 		ozz::animation::offline::RawAnimation opt_animation;
 		if (!optimizer(raw_animation, *m_skeleton, &opt_animation)) {
