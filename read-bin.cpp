@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <fstream>
+#include <map>
 #include <stdio.h>
 #include <assert.h>
 
@@ -7,11 +8,17 @@
 #include "ozz/animation/offline/skeleton_builder.h"
 #include "ozz/animation/offline/raw_animation.h"
 #include "ozz/animation/offline/animation_builder.h"
+#include "ozz/animation/offline/animation_optimizer.h"
 
 #include "ozz/animation/runtime/skeleton.h"
 #include "ozz/animation/runtime/animation.h"
 
 using namespace ozz::animation::offline;
+
+std::vector<ozz::String::Std> m_raw_joint_names;
+std::map<ozz::String::Std, int> m_namemap;
+
+ozz::animation::Skeleton* m_skeleton = NULL;
 
 void read(std::istream& stream, ozz::math::Transform& transform)
 {
@@ -102,6 +109,8 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	//skeleton->m_bones.setSize(nbones);
 	assert(nbones == nparentIndices);
 
+	m_raw_joint_names.resize(nbones);
+
 	for (int i=0; i<nbones; ++i)
 	{
 		char buf[240];
@@ -109,6 +118,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 		//puts(buf);
 
 		joint_vec[i]->name = buf;
+		m_raw_joint_names[i] = buf;
 	}
 
 	int nreferencePose;
@@ -152,6 +162,16 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	}
 }
 
+int get_skeleton_joint_idx(int raw_joint_idx)
+{
+	ozz::String::Std raw_joint_name = m_raw_joint_names[raw_joint_idx];
+	auto g = m_namemap.find(raw_joint_name);
+	if ( g != m_namemap.end() )
+		return g->second;
+	else
+		return -1;
+}
+
 void read(std::istream& stream, RawAnimation *anim)
 {
 	int numOriginalFrames;
@@ -169,14 +189,19 @@ void read(std::istream& stream, RawAnimation *anim)
 	printf("numTransforms: %d\n", numTransforms);
 	printf("numFloats: %d\n", numFloats);
 
-	anim->duration = duration;
-	anim->tracks.resize(numTransforms);
+	int ntracks = numTransforms;
+	//TODO: min m_skeleton->num_joints()
 
-	for (int i=0; i<numTransforms; i++)
+	anim->duration = duration;
+	anim->tracks.resize(ntracks);
+
+	for (int i=0; i<ntracks; i++)
 	{
-		anim->tracks[i].translations.resize(numOriginalFrames);
-		anim->tracks[i].rotations.resize(numOriginalFrames);
-		anim->tracks[i].scales.resize(numOriginalFrames);
+		RawAnimation::JointTrack& track = anim->tracks[i];
+
+		track.translations.resize(numOriginalFrames);
+		track.rotations.resize(numOriginalFrames);
+		track.scales.resize(numOriginalFrames);
 	}
 
 	for (int f=0; f<numOriginalFrames; f++)
@@ -187,20 +212,27 @@ void read(std::istream& stream, RawAnimation *anim)
 
 		//TODO: track order
 		//Skeleton jointsの並びはRawSkeleton jointsの並びと異なる
-		for (int i=0; i<numTransforms; i++)
+		for (int i=0; i<ntracks; i++)
 		{
 			ozz::math::Transform transform;
 			read(stream, transform);
 
-			RawAnimation::TranslationKey& translationKey = anim->tracks[i].translations[f];
+			int joint_idx = get_skeleton_joint_idx(i);
+
+			if (joint_idx == -1)
+				continue;
+
+			RawAnimation::JointTrack& track = anim->tracks[joint_idx];
+
+			RawAnimation::TranslationKey& translationKey = track.translations[f];
 			translationKey.time = time;
 			translationKey.value = transform.translation;
 
-			RawAnimation::RotationKey& rotationKey = anim->tracks[i].rotations[f];
+			RawAnimation::RotationKey& rotationKey = track.rotations[f];
 			rotationKey.time = time;
 			rotationKey.value = transform.rotation;
 
-			RawAnimation::ScaleKey& scaleKey = anim->tracks[i].scales[f];
+			RawAnimation::ScaleKey& scaleKey = track.scales[f];
 			scaleKey.time = time;
 			scaleKey.value = transform.scale;
 		}
@@ -216,6 +248,49 @@ void read(std::istream& stream, RawAnimation *anim)
 			//anim->m_floats[i + offFloats] = g;
 		}
 	}
+}
+
+int load_skeleton(const char* filename)
+{
+	std::ifstream stream;
+	stream.open(filename, std::ifstream::binary);
+
+	char buf[240];
+	stream.getline(buf, 240, '\n');
+	puts(buf);
+
+	unsigned int version;
+	stream.read((char *)&version, sizeof(unsigned int));
+
+	if (version != 0x01000000)
+	{
+		std::cerr << "Error: version mismatch! Abort.";
+		return 100;
+	}
+
+	int nskeletons;
+	stream.read((char *)&nskeletons, sizeof(int));
+	printf("#skeletons: %d\n", nskeletons);
+	assert(nskeletons != 0);
+
+	RawSkeleton raw_skeleton;
+	read(stream, &raw_skeleton);
+
+	if (!raw_skeleton.Validate()) {
+		std::cerr << "Error: raw skeleton is not valid.\n";
+		return 101;
+	}
+	std::cerr << "raw skeleton is valid.\n";
+	ozz::animation::offline::SkeletonBuilder builder;
+	m_skeleton = builder(raw_skeleton);
+
+	//puts("== skeleton joint names ==");
+	for (auto i=m_skeleton->joint_names().begin; i!=m_skeleton->joint_names().end; ++i)
+	{
+		//puts(*i);
+		m_namemap[*i] = i - m_skeleton->joint_names().begin;
+	}
+	return 0;
 }
 
 int load(const char* filename)
@@ -242,25 +317,6 @@ int load(const char* filename)
 
 	if (nskeletons != 0)
 	{
-		RawSkeleton raw_skeleton;
-		read(stream, &raw_skeleton);
-
-		if (!raw_skeleton.Validate()) {
-			std::cerr << "Error: raw skeleton is not valid.\n";
-			return 101;
-		}
-		std::cerr << "raw skeleton is valid.\n";
-		ozz::animation::offline::SkeletonBuilder builder;
-		ozz::animation::Skeleton* skeleton = builder(raw_skeleton);
-
-		puts("== skeleton joint names ==");
-		for (auto i=skeleton->joint_names().begin; i!=skeleton->joint_names().end; ++i)
-		{
-			puts(*i);
-		}
-
-		ozz::memory::default_allocator()->Delete(skeleton);
-
 		std::cerr << "Error: #skeletons should be 0 but " << nskeletons << "! Abort.";
 		return 101;
 	}
@@ -285,8 +341,17 @@ int load(const char* filename)
 		}
 		std::cerr << "raw animation is valid.\n";
 
+		// Stores the optimizer in order to expose its parameters.
+		ozz::animation::offline::AnimationOptimizer optimizer;
+
+		// Optimzes the raw animation.
+		ozz::animation::offline::RawAnimation opt_animation;
+		if (!optimizer(raw_animation, *m_skeleton, &opt_animation)) {
+			return 101;
+		}
+
 		ozz::animation::offline::AnimationBuilder builder;
-		ozz::animation::Animation* animation = builder(raw_animation);
+		ozz::animation::Animation* animation = builder(opt_animation);
 
 		puts("== animation buffer stat ==");
 		printf("duration: %.6f\n", animation->duration() );
@@ -300,6 +365,13 @@ int load(const char* filename)
 
 	stream.close();
 	return 0;
+}
+
+void quit()
+{
+	m_namemap.clear();
+	m_raw_joint_names.clear();
+	ozz::memory::default_allocator()->Delete(m_skeleton);
 }
 
 int main( int argc, char *argv[], char *envp[] )
@@ -330,7 +402,13 @@ int main( int argc, char *argv[], char *envp[] )
 		return 1;
 	}
 
+	if (load_skeleton("skeleton.bin") != 0)
+		// m_skeleton is not allocated
+		return 101;
+
 	int ret = load(ifile);
+
+	quit();
 
 	return ret;
 }
