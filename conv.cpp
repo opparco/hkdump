@@ -238,9 +238,6 @@ int save(const char* filename, const char* destname)
 	int nskeletons;
 	stream.read(&nskeletons, sizeof(int));
 
-	int nanimations;
-	stream.read(&nanimations, sizeof(int));
-
 	if (nskeletons != 0)
 	{
 		// TEST
@@ -250,6 +247,9 @@ int save(const char* filename, const char* destname)
 		std::cerr << "Error: #skeletons should be 0 but " << nskeletons << "! Abort.";
 		return 101;
 	}
+
+	int nanimations;
+	stream.read(&nanimations, sizeof(int));
 
 	if (nanimations != 1)
 	{
