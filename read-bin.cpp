@@ -291,9 +291,9 @@ int load(const char* filename)
 		puts("== animation buffer stat ==");
 		printf("duration: %.6f\n", animation->duration() );
 		printf("num_tracks: %d\n", animation->num_tracks() );
-		printf("#translation keys: %d\n", animation->translations().Count() );
-		printf("#rotation keys: %d\n", animation->rotations().Count() );
-		printf("#scale keys: %d\n", animation->scales().Count() );
+		printf("#translation keys: %lu\n", animation->translations().Count() );
+		printf("#rotation keys: %lu\n", animation->rotations().Count() );
+		printf("#scale keys: %lu\n", animation->scales().Count() );
 
 		ozz::memory::default_allocator()->Delete(animation);
 	}
