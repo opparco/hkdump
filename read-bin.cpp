@@ -7,15 +7,16 @@
 #include "ozz/animation/offline/raw_skeleton.h"
 #include "ozz/animation/offline/skeleton_builder.h"
 #include "ozz/animation/offline/raw_animation.h"
-#include "ozz/animation/offline/animation_builder.h"
 #include "ozz/animation/offline/animation_optimizer.h"
 
 #include "ozz/animation/runtime/skeleton.h"
-#include "ozz/animation/runtime/animation.h"
 
 using namespace ozz::animation::offline;
 
+/* idx to name for joint in raw_skeleton.joints */
 std::vector<ozz::String::Std> m_raw_joint_names;
+
+/* name to idx for joint in skeleton.joints */
 std::map<ozz::String::Std, int> m_namemap;
 
 ozz::animation::Skeleton* m_skeleton = NULL;
@@ -44,20 +45,20 @@ void read(std::istream& stream, ozz::math::Transform& transform)
 	transform.scale.z = scale.z;
 }
 
-void read(std::istream& stream, RawSkeleton *skeleton)
+void read(std::istream& stream, RawSkeleton& skeleton)
 {
 	{
 		char buf[240];
 		stream.getline(buf, 240, '\0');
 		puts(buf);
 
-		//skeleton->m_name = buf;
+		//skeleton.m_name = buf;
 	}
 
 	int nparentIndices;
 	stream.read((char *)&nparentIndices, sizeof(int));
 	printf("#parentIndices: %d\n", nparentIndices);
-	//skeleton->m_parentIndices.setSize(nparentIndices);
+	//skeleton.m_parentIndices.setSize(nparentIndices);
 
 	std::vector<RawSkeleton::Joint::Children::iterator> joint_vec;	// vector of joint ref
 	joint_vec.resize(nparentIndices);
@@ -80,7 +81,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	}
 
 	{
-		auto sibling = &skeleton->roots;
+		auto sibling = &skeleton.roots;
 		sibling->resize(rootIndices.size());
 		auto p = sibling->begin();
 		for (int f=0; f<rootIndices.size(); ++f)
@@ -106,7 +107,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	int nbones;
 	stream.read((char *)&nbones, sizeof(int));
 	printf("#nbones: %d\n", nbones);
-	//skeleton->m_bones.setSize(nbones);
+	//skeleton.m_bones.setSize(nbones);
 	assert(nbones == nparentIndices);
 
 	m_raw_joint_names.resize(nbones);
@@ -124,7 +125,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	int nreferencePose;
 	stream.read((char *)&nreferencePose, sizeof(int));
 	printf("#nreferencePose: %d\n", nreferencePose);
-	//skeleton->m_referencePose.setSize(nreferencePose);
+	//skeleton.m_referencePose.setSize(nreferencePose);
 	assert(nreferencePose == nparentIndices);
 
 	for (int i=0; i<nreferencePose; ++i)
@@ -135,7 +136,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 	int nreferenceFloats;
 	stream.read((char *)&nreferenceFloats, sizeof(int));
 	printf("#nreferenceFloats: %d\n", nreferenceFloats);
-	//skeleton->m_referenceFloats.setSize(nreferenceFloats);	// ignore
+	//skeleton.m_referenceFloats.setSize(nreferenceFloats);	// ignore
 
 	for (int i=0; i<nreferenceFloats; ++i)
 	{
@@ -143,13 +144,13 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 
 		stream.read((char *)&g, sizeof(float));
 
-		//skeleton->m_referenceFloats[i] = g;	// ignore
+		//skeleton.m_referenceFloats[i] = g;	// ignore
 	}
 
 	int nfloatSlots;
 	stream.read((char *)&nfloatSlots, sizeof(int));
 	printf("#nfloatSlots: %d\n", nfloatSlots);
-	//skeleton->m_floatSlots.setSize(nfloatSlots);	// ignore
+	//skeleton.m_floatSlots.setSize(nfloatSlots);	// ignore
 	assert(nreferenceFloats == nfloatSlots);
 
 	for (int i=0; i<nfloatSlots; ++i)
@@ -158,7 +159,7 @@ void read(std::istream& stream, RawSkeleton *skeleton)
 		stream.getline(buf, 240, '\0');
 		//puts(buf);
 
-		//skeleton->m_floatSlots[i] = buf;	// ignore
+		//skeleton.m_floatSlots[i] = buf;	// ignore
 	}
 }
 
@@ -172,7 +173,7 @@ int get_skeleton_joint_idx(int raw_joint_idx)
 		return -1;
 }
 
-void read(std::istream& stream, RawAnimation *anim)
+void read(std::istream& stream, RawAnimation& anim)
 {
 	int numOriginalFrames;
 	float duration;
@@ -192,12 +193,12 @@ void read(std::istream& stream, RawAnimation *anim)
 	int ntracks = numTransforms;
 	//TODO: min m_skeleton->num_joints()
 
-	anim->duration = duration;
-	anim->tracks.resize(ntracks);
+	anim.duration = duration;
+	anim.tracks.resize(ntracks);
 
 	for (int i=0; i<ntracks; i++)
 	{
-		RawAnimation::JointTrack& track = anim->tracks[i];
+		RawAnimation::JointTrack& track = anim.tracks[i];
 
 		track.translations.resize(numOriginalFrames);
 		track.rotations.resize(numOriginalFrames);
@@ -210,8 +211,6 @@ void read(std::istream& stream, RawAnimation *anim)
 		stream.read((char *)&time, sizeof(float));
 		//printf("time: %.6f\n", time);
 
-		//TODO: track order
-		//Skeleton jointsの並びはRawSkeleton jointsの並びと異なる
 		for (int i=0; i<ntracks; i++)
 		{
 			ozz::math::Transform transform;
@@ -222,7 +221,7 @@ void read(std::istream& stream, RawAnimation *anim)
 			if (joint_idx == -1)
 				continue;
 
-			RawAnimation::JointTrack& track = anim->tracks[joint_idx];
+			RawAnimation::JointTrack& track = anim.tracks[joint_idx];
 
 			RawAnimation::TranslationKey& translationKey = track.translations[f];
 			translationKey.time = time;
@@ -245,12 +244,12 @@ void read(std::istream& stream, RawAnimation *anim)
 
 			stream.read((char *)&g, sizeof(float));
 
-			//anim->m_floats[i + offFloats] = g;
+			//anim.m_floats[i + offFloats] = g;
 		}
 	}
 }
 
-int load_skeleton(const char* filename)
+int load(const char* filename, RawSkeleton& skeleton)
 {
 	std::ifstream stream;
 	stream.open(filename, std::ifstream::binary);
@@ -273,27 +272,17 @@ int load_skeleton(const char* filename)
 	printf("#skeletons: %d\n", nskeletons);
 	assert(nskeletons != 0);
 
-	RawSkeleton raw_skeleton;
-	read(stream, &raw_skeleton);
+	read(stream, skeleton);
 
-	if (!raw_skeleton.Validate()) {
+	if (!skeleton.Validate()) {
 		std::cerr << "Error: raw skeleton is not valid.\n";
 		return 101;
 	}
 	std::cerr << "raw skeleton is valid.\n";
-	ozz::animation::offline::SkeletonBuilder builder;
-	m_skeleton = builder(raw_skeleton);
-
-	//puts("== skeleton joint names ==");
-	for (auto i=m_skeleton->joint_names().begin; i!=m_skeleton->joint_names().end; ++i)
-	{
-		//puts(*i);
-		m_namemap[*i] = i - m_skeleton->joint_names().begin;
-	}
 	return 0;
 }
 
-int load(const char* filename)
+int load(const char* filename, RawAnimation& anim)
 {
 	std::ifstream stream;
 	stream.open(filename, std::ifstream::binary);
@@ -331,56 +320,33 @@ int load(const char* filename)
 		return 101;
 	}
 
-	{
-		RawAnimation raw_animation;
-		read(stream, &raw_animation);
+	read(stream, anim);
 
-		if (!raw_animation.Validate()) {
-			std::cerr << "Error: raw animation is not valid.\n";
-			return 101;
-		}
-		std::cerr << "raw animation is valid.\n";
-
-		// Stores the optimizer in order to expose its parameters.
-		ozz::animation::offline::AnimationOptimizer optimizer;
-
-		// Translation optimization tolerance, defined as the distance between two
-		// translation values in meters.
-		// default: optimizer.translation_tolerance = 1e-3f;
-
-		// Rotation optimization tolerance, ie: the angle between two rotation values
-		// in radian.
-		// default: optimizer.rotation_tolerance = .1f * ozz::math::kPi / 180.f;
-
-		// Scale optimization tolerance, ie: the norm of the difference of two scales.
-		// default: optimizer.scale_tolerance = 1e-3f;
-
-		// Hierarchical translation optimization tolerance, ie: the maximum error
-		// (distance) that an optimization on a joint is allowed to generate on its
-		// whole child hierarchy.
-		// default: optimizer.hierarchical_tolerance = 1e-3f;
-
-		// Optimzes the raw animation.
-		ozz::animation::offline::RawAnimation opt_animation;
-		if (!optimizer(raw_animation, *m_skeleton, &opt_animation)) {
-			return 101;
-		}
-
-		ozz::animation::offline::AnimationBuilder builder;
-		ozz::animation::Animation* animation = builder(opt_animation);
-
-		puts("== animation buffer stat ==");
-		printf("duration: %.6f\n", animation->duration() );
-		printf("num_tracks: %d\n", animation->num_tracks() );
-		printf("#translation keys: %lu\n", animation->translations().Count() );
-		printf("#rotation keys: %lu\n", animation->rotations().Count() );
-		printf("#scale keys: %lu\n", animation->scales().Count() );
-
-		ozz::memory::default_allocator()->Delete(animation);
+	if (!anim.Validate()) {
+		std::cerr << "Error: raw animation is not valid.\n";
+		return 101;
 	}
+	std::cerr << "raw animation is valid.\n";
 
 	stream.close();
 	return 0;
+}
+
+void dump(RawAnimation& anim)
+{
+	puts("== animation buffer stat ==");
+	printf("duration: %.6f\n", anim.duration );
+	printf("#tracks: %lu\n", anim.tracks.size() );
+
+	for (int i=0; i<anim.tracks.size(); ++i)
+	{
+		RawAnimation::JointTrack& track = anim.tracks[i];
+		printf("%d ", i);
+		printf(" #translations: %lu", track.translations.size() );
+		printf(" #rotations: %lu", track.rotations.size() );
+		printf(" #scales: %lu", track.scales.size() );
+		printf("\n");
+	}
 }
 
 void quit()
@@ -418,13 +384,62 @@ int main( int argc, char *argv[], char *envp[] )
 		return 1;
 	}
 
-	if (load_skeleton("skeleton.bin") != 0)
+	RawSkeleton raw_skeleton;
+	int ret;
+	ret = load("skeleton.bin", raw_skeleton);
+	if (ret != 0)
+	{
 		// m_skeleton is not allocated
 		return 101;
+	}
 
-	int ret = load(ifile);
+	SkeletonBuilder builder;
+	m_skeleton = builder(raw_skeleton);	// allocate
 
-	quit();
+	//puts("== skeleton joint names ==");
+	for (auto i=m_skeleton->joint_names().begin; i!=m_skeleton->joint_names().end; ++i)
+	{
+		//puts(*i);
+		m_namemap[*i] = i - m_skeleton->joint_names().begin;
+	}
 
+	RawAnimation raw_animation;
+	ret = load(ifile, raw_animation);
+	if (ret != 0)
+	{
+		quit();	// delete m_skeleton
+		return ret;
+	}
+
+	{
+		// Stores the optimizer in order to expose its parameters.
+		AnimationOptimizer optimizer;
+
+		// Translation optimization tolerance, defined as the distance between two
+		// translation values in meters.
+		// default: optimizer.translation_tolerance = 1e-3f;
+
+		// Rotation optimization tolerance, ie: the angle between two rotation values
+		// in radian.
+		// default: optimizer.rotation_tolerance = .1f * ozz::math::kPi / 180.f;
+
+		// Scale optimization tolerance, ie: the norm of the difference of two scales.
+		// default: optimizer.scale_tolerance = 1e-3f;
+
+		// Hierarchical translation optimization tolerance, ie: the maximum error
+		// (distance) that an optimization on a joint is allowed to generate on its
+		// whole child hierarchy.
+		// default: optimizer.hierarchical_tolerance = 1e-3f;
+
+		RawAnimation optimized_animation;
+		if (!optimizer(raw_animation, *m_skeleton, &optimized_animation))
+		{
+			quit();	// delete m_skeleton
+			return 103;	// failed to optimize
+		}
+		dump(optimized_animation);
+	}
+
+	quit();	// delete m_skeleton
 	return ret;
 }
