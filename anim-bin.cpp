@@ -424,7 +424,7 @@ int main( int argc, char *argv[], char *envp[] )
 
 	if (ifile == NULL)
 	{
-		puts("Usage: read-bin.exe src.bin");
+		puts("Usage: hkanim-bin.exe src.bin");
 		return 1;
 	}
 
