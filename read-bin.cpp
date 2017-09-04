@@ -418,18 +418,20 @@ int main( int argc, char *argv[], char *envp[] )
 		// Translation optimization tolerance, defined as the distance between two
 		// translation values in meters.
 		// default: optimizer.translation_tolerance = 1e-3f;
+		optimizer.translation_tolerance = 1e-1f;
 
 		// Rotation optimization tolerance, ie: the angle between two rotation values
 		// in radian.
 		// default: optimizer.rotation_tolerance = .1f * ozz::math::kPi / 180.f;
 
 		// Scale optimization tolerance, ie: the norm of the difference of two scales.
-		// default: optimizer.scale_tolerance = 1e-3f;
+		optimizer.scale_tolerance = 1e-1f;
 
 		// Hierarchical translation optimization tolerance, ie: the maximum error
 		// (distance) that an optimization on a joint is allowed to generate on its
 		// whole child hierarchy.
 		// default: optimizer.hierarchical_tolerance = 1e-3f;
+		optimizer.hierarchical_tolerance = 1e-1f;
 
 		RawAnimation optimized_animation;
 		if (!optimizer(raw_animation, *m_skeleton, &optimized_animation))
