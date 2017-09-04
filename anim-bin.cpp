@@ -341,7 +341,12 @@ void write(std::ostream& stream, RawAnimation& anim)
 
 	for (int i=0; i<ntracks; ++i)
 	{
-		RawAnimation::JointTrack& track = anim.tracks[i];
+		int joint_idx = get_skeleton_joint_idx(i);
+
+		if (joint_idx == -1)
+			continue;
+
+		RawAnimation::JointTrack& track = anim.tracks[joint_idx];
 
 		const int ntranslations = static_cast<int>(track.translations.size());
 		stream.write((char *)&ntranslations, sizeof(int));
