@@ -1,2 +1,1 @@
-read-bin.exe skeleton.bin 
-read-bin.exe idle.bin 
+hkanim-bin.exe idle.bin 

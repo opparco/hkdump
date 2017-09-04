@@ -332,21 +332,60 @@ int load(const char* filename, RawAnimation& anim)
 	return 0;
 }
 
-void dump(RawAnimation& anim)
+void write(std::ostream& stream, RawAnimation& anim)
 {
-	puts("== animation buffer stat ==");
-	printf("duration: %.6f\n", anim.duration );
-	printf("#tracks: %lu\n", anim.tracks.size() );
+	stream.write((char *)&anim.duration, sizeof(float));
 
-	for (int i=0; i<anim.tracks.size(); ++i)
+	const int ntracks = anim.num_tracks();
+	stream.write((char *)&ntracks, sizeof(int));
+
+	for (int i=0; i<ntracks; ++i)
 	{
 		RawAnimation::JointTrack& track = anim.tracks[i];
-		printf("%d ", i);
-		printf(" #translations: %lu", track.translations.size() );
-		printf(" #rotations: %lu", track.rotations.size() );
-		printf(" #scales: %lu", track.scales.size() );
-		printf("\n");
+
+		const int ntranslations = static_cast<int>(track.translations.size());
+		stream.write((char *)&ntranslations, sizeof(int));
+		for (int f=0; f<ntranslations; ++f)
+		{
+			stream.write((char *)&track.translations[f], sizeof(ozz::math::Float3));
+		}
+
+		const int nrotations = static_cast<int>(track.rotations.size());
+		stream.write((char *)&nrotations, sizeof(int));
+		for (int f=0; f<nrotations; ++f)
+		{
+			stream.write((char *)&track.rotations[f], sizeof(ozz::math::Quaternion));
+		}
+
+		const int nscales = static_cast<int>(track.scales.size());
+		stream.write((char *)&nscales, sizeof(int));
+		for (int f=0; f<nscales; ++f)
+		{
+			stream.write((char *)&track.scales[f], sizeof(ozz::math::Float3));
+		}
 	}
+}
+
+int save(const char* filename, RawAnimation& anim)
+{
+	std::ofstream stream;
+	stream.open(filename, std::ofstream::binary);
+
+	const std::string head = "hkanim File Format, Version 1.1.0.0\n";
+	stream.write(head.data(), head.size());
+
+	const unsigned int version = 0x01010000;
+	stream.write((char *)&version, sizeof(unsigned int));
+
+	const int nskeletons = 0;
+	stream.write((char *)&nskeletons, sizeof(int));
+
+	const int nanimations = 1;
+	stream.write((char *)&nanimations, sizeof(int));
+
+	write(stream, anim);
+
+	return 0;
 }
 
 void quit()
@@ -440,7 +479,7 @@ int main( int argc, char *argv[], char *envp[] )
 			quit();	// delete m_skeleton
 			return 103;	// failed to optimize
 		}
-		dump(optimized_animation);
+		save("out.ani", optimized_animation);
 	}
 
 	quit();	// delete m_skeleton
