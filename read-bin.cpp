@@ -279,6 +279,7 @@ int load(const char* filename, RawSkeleton& skeleton)
 		return 101;
 	}
 	std::cerr << "raw skeleton is valid.\n";
+
 	return 0;
 }
 
@@ -328,7 +329,6 @@ int load(const char* filename, RawAnimation& anim)
 	}
 	std::cerr << "raw animation is valid.\n";
 
-	stream.close();
 	return 0;
 }
 
