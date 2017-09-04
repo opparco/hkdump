@@ -425,6 +425,7 @@ int main( int argc, char *argv[], char *envp[] )
 		// default: optimizer.rotation_tolerance = .1f * ozz::math::kPi / 180.f;
 
 		// Scale optimization tolerance, ie: the norm of the difference of two scales.
+		// default: optimizer.scale_tolerance = 1e-3f;
 		optimizer.scale_tolerance = 1e-1f;
 
 		// Hierarchical translation optimization tolerance, ie: the maximum error
