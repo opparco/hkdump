@@ -98,7 +98,7 @@ void read(hkIstream& stream, hkaSkeleton *skeleton)
 		char buf[240];
 		int len = stream.getline(buf, 240, '\0');
 		//printf("len %d\n", len);
-		puts(buf);
+		//puts(buf);
 
 		skeleton->m_name = buf;
 	}
@@ -123,7 +123,7 @@ void read(hkIstream& stream, hkaSkeleton *skeleton)
 		char buf[240];
 		int len = stream.getline(buf, 240, '\0');
 		//printf("len %d\n", len);
-		puts(buf);
+		//puts(buf);
 
 		skeleton->m_bones[i].m_name = buf;
 	}
@@ -162,7 +162,7 @@ void read(hkIstream& stream, hkaSkeleton *skeleton)
 		char buf[240];
 		int len = stream.getline(buf, 240, '\0');
 		//printf("len %d\n", len);
-		puts(buf);
+		//puts(buf);
 
 		skeleton->m_floatSlots[i] = buf;
 	}
@@ -215,6 +215,25 @@ void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 			anim->m_floats[i + offFloats] = g;
 		}
 	}
+
+	anim->m_annotationTracks.setSize(numTransforms);
+	hkArray< class hkaAnnotationTrack >::iterator annotationTrack = anim->m_annotationTracks.begin();
+
+	int numAnnotations;
+	stream.read(&numAnnotations, sizeof(int));
+	annotationTrack->m_annotations.setSize(numAnnotations);
+
+	for (hkArray< class hkaAnnotationTrack::Annotation >::iterator annotation = annotationTrack->m_annotations.begin(); annotation != annotationTrack->m_annotations.end(); ++annotation)
+	{
+		stream.read(&annotation->m_time, sizeof(hkReal));
+
+		char buf[240];
+		int len = stream.getline(buf, 240, '\0');
+		//printf("len %d\n", len);
+		//puts(buf);
+
+		annotation->m_text = buf;
+	}
 }
 
 int save(const char* filename, const char* destname)
@@ -229,7 +248,7 @@ int save(const char* filename, const char* destname)
 	unsigned int version;
 	stream.read(&version, sizeof(unsigned int));
 
-	if (version != 0x01000000)
+	if (version != 0x01000100)
 	{
 		std::cerr << "Error: version mismatch! Abort.";
 		return 100;

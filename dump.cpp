@@ -279,6 +279,25 @@ void write(hkOstream& o, hkaAnimation *anim)
 			o.printf("%d %.6f\n", i, floatsOut[i]);
 		}
 	}
+
+			/// The annotation tracks associated with this skeletal animation.
+	hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin();
+	if (annotationTrack != anim->m_annotationTracks.end())
+	{
+		const int numAnnotations = annotationTrack->m_annotations.getSize();
+		o.printf("numAnnotations: %d\n", numAnnotations);
+
+		for (hkArray< class hkaAnnotationTrack::Annotation >::const_iterator annotation = annotationTrack->m_annotations.begin(); annotation != annotationTrack->m_annotations.end(); ++annotation)
+		{
+			o.printf("time: %.6f", annotation->m_time);
+			o << " text: " << annotation->m_text << "\n";
+		}
+	}
+	else
+	{
+		const int numAnnotations = 0;
+		o.printf("numAnnotations: %d\n", numAnnotations);
+	}
 }
 
 void write(hkOstream& o, hkaAnimationBinding *binding)
