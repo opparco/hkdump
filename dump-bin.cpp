@@ -264,6 +264,29 @@ void write(hkStreamWriter *writer, hkaAnimation *anim)
 			writer->write(&floatsOut[i], sizeof(hkReal));
 		}
 	}
+
+			/// The annotation tracks associated with this skeletal animation.
+	const int numAnnotationTracks = anim->annotationTracks.getSize();
+	writer->write(&numAnnotationTracks, sizeof(int));
+
+	for (hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->annotationTracks.end(); ++annotationTrack)
+	{
+		const int numAnnotations = annotationTrack->m_annotations.getSize();
+		writer->write(&numAnnotations, sizeof(int));
+
+		for (hkArray< class hkaAnnotationTrack::Annotation >::const_iterator annotation = annotationTrack->m_annotations.begin(); annotation != annotationTrack->m_annotations.end(); ++annotation)
+		{
+			writer->write(&annotation->m_time, sizeof(hkReal));
+
+			hkStringPtr text = annotation->m_text;
+			writer->write(text.cString(), text.getLength()+1);
+		}
+	}
+	else
+	{
+		const int numAnnotations = 0;
+		writer->write(&numAnnotations, sizeof(int));
+	}
 }
 
 void write(hkStreamWriter *writer, hkaAnimationBinding *binding)
@@ -299,10 +322,10 @@ void dump(const char* filename, const char* destname)
 	hkOstream deststream(destname);
 	hkStreamWriter *writer = deststream.getStreamWriter();
 
-	hkStringPtr head = "hkdump File Format, Version 1.0.0.0\n";
+	hkStringPtr head = "hkdump File Format, Version 1.0.1.0\n";
 	writer->write(head.cString(), head.getLength());
 
-	const unsigned int version = 0x01000000;
+	const unsigned int version = 0x01000100;
 	writer->write(&version, sizeof(unsigned int));
 
 	hkIstream stream(filename);
