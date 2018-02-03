@@ -284,8 +284,7 @@ void write(hkOstream& o, hkaAnimation *anim)
 	const int numAnnotationTracks = anim->m_annotationTracks.getSize();
 	o.printf("numAnnotationTracks: %d\n", numAnnotationTracks);
 
-	hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin();
-	if (annotationTrack != anim->m_annotationTracks.end())
+	for (hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->m_annotationTracks.end(); ++annotationTrack)
 	{
 		const int numAnnotations = annotationTrack->m_annotations.getSize();
 		o.printf("numAnnotations: %d\n", numAnnotations);
@@ -295,11 +294,6 @@ void write(hkOstream& o, hkaAnimation *anim)
 			o.printf("time: %.6f", annotation->m_time);
 			o << " text: " << annotation->m_text << "\n";
 		}
-	}
-	else
-	{
-		const int numAnnotations = 0;
-		o.printf("numAnnotations: %d\n", numAnnotations);
 	}
 }
 
@@ -345,9 +339,9 @@ void dump(const char* filename, const char* destname)
 	}
 	else
 	{
-		if (hkRootLevelContainer* scene = resource->getContents<hkRootLevelContainer>())
+		if (hkRootLevelContainer* rootCont = resource->getContents<hkRootLevelContainer>())
 		{
-			if (hkaAnimationContainer *animCont = scene->findObject<hkaAnimationContainer>())
+			if (hkaAnimationContainer *animCont = rootCont->findObject<hkaAnimationContainer>())
 			{
 				int nskeletons = animCont->m_skeletons.getSize();
 				o.printf("#skeletons: %d\n", nskeletons);

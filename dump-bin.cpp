@@ -332,9 +332,9 @@ void dump(const char* filename, const char* destname)
 	}
 	else
 	{
-		if (hkRootLevelContainer* scene = resource->getContents<hkRootLevelContainer>())
+		if (hkRootLevelContainer* rootCont = resource->getContents<hkRootLevelContainer>())
 		{
-			if (hkaAnimationContainer *animCont = scene->findObject<hkaAnimationContainer>())
+			if (hkaAnimationContainer *animCont = rootCont->findObject<hkaAnimationContainer>())
 			{
 				int nskeletons = animCont->m_skeletons.getSize();
 				writer->write(&nskeletons, sizeof(int));
