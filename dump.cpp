@@ -334,7 +334,7 @@ void dump(const char* filename, const char* destname)
 {
 	hkOstream o(destname);
 
-	o << "hkdump File Format, Version 1.0.0.0\n";
+	o << "hkdump File Format, Version 1.0.2.0\n";
 
 	hkIstream stream(filename);
 	hkStreamReader *reader = stream.getStreamReader();

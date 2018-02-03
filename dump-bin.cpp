@@ -317,10 +317,10 @@ void dump(const char* filename, const char* destname)
 	hkOstream deststream(destname);
 	hkStreamWriter *writer = deststream.getStreamWriter();
 
-	hkStringPtr head = "hkdump File Format, Version 1.0.1.0\n";
+	hkStringPtr head = "hkdump File Format, Version 1.0.2.0\n";
 	writer->write(head.cString(), head.getLength());
 
-	const unsigned int version = 0x01000100;
+	const unsigned int version = 0x01000200;
 	writer->write(&version, sizeof(unsigned int));
 
 	hkIstream stream(filename);

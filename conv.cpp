@@ -252,7 +252,7 @@ int save(const char* filename, const char* destname)
 	unsigned int version;
 	stream.read(&version, sizeof(unsigned int));
 
-	if (version != 0x01000100)
+	if (version != 0x01000200)
 	{
 		std::cerr << "Error: version mismatch! Abort.";
 		return 100;
