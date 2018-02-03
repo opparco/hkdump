@@ -266,10 +266,10 @@ void write(hkStreamWriter *writer, hkaAnimation *anim)
 	}
 
 			/// The annotation tracks associated with this skeletal animation.
-	const int numAnnotationTracks = anim->annotationTracks.getSize();
+	const int numAnnotationTracks = anim->m_annotationTracks.getSize();
 	writer->write(&numAnnotationTracks, sizeof(int));
 
-	for (hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->annotationTracks.end(); ++annotationTrack)
+	for (hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->m_annotationTracks.end(); ++annotationTrack)
 	{
 		const int numAnnotations = annotationTrack->m_annotations.getSize();
 		writer->write(&numAnnotations, sizeof(int));
@@ -281,11 +281,6 @@ void write(hkStreamWriter *writer, hkaAnimation *anim)
 			hkStringPtr text = annotation->m_text;
 			writer->write(text.cString(), text.getLength()+1);
 		}
-	}
-	else
-	{
-		const int numAnnotations = 0;
-		writer->write(&numAnnotations, sizeof(int));
 	}
 }
 

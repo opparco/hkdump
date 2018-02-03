@@ -281,7 +281,7 @@ void write(hkOstream& o, hkaAnimation *anim)
 	}
 
 			/// The annotation tracks associated with this skeletal animation.
-	const int numAnnotationTracks = anim->annotationTracks.getSize();
+	const int numAnnotationTracks = anim->m_annotationTracks.getSize();
 	o.printf("numAnnotationTracks: %d\n", numAnnotationTracks);
 
 	hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin();

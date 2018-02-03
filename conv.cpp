@@ -220,13 +220,13 @@ void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 	stream.read(&numAnnotationTracks, sizeof(int));
 	anim->m_annotationTracks.setSize(numAnnotationTracks);
 
-	for (hkArray< class hkaAnnotationTrack >::const_iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->annotationTracks.end(); ++annotationTrack)
+	for (hkArray< class hkaAnnotationTrack >::iterator annotationTrack = anim->m_annotationTracks.begin(); annotationTrack != anim->m_annotationTracks.end(); ++annotationTrack)
 	{
 		int numAnnotations;
 		stream.read(&numAnnotations, sizeof(int));
 		annotationTrack->m_annotations.setSize(numAnnotations);
 
-		for (hkArray< class hkaAnnotationTrack::Annotation >::const_iterator annotation = annotationTrack->m_annotations.begin(); annotation != annotationTrack->m_annotations.end(); ++annotation)
+		for (hkArray< class hkaAnnotationTrack::Annotation >::iterator annotation = annotationTrack->m_annotations.begin(); annotation != annotationTrack->m_annotations.end(); ++annotation)
 		{
 			stream.read(&annotation->m_time, sizeof(hkReal));
 
