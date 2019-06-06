@@ -1,35 +1,24 @@
-#include <stdio.h>
 #include <iostream>
 
-#include <Common/Base/keycode.cxx> 
-#include <Common/Base/Config/hkProductFeatures.cxx>
+#define HK_CLASSES_FILE <Common/Serialize/Classlist/hkAnimationClasses.h>
+#include <Common/Base/hkBase.h>
 
-#include <Common/Base/Memory/System/hkMemorySystem.h>
 #include <Common/Base/Memory/System/Util/hkMemoryInitUtil.h>
 #include <Common/Base/Memory/Allocator/Malloc/hkMallocAllocator.h>
-
 #include <Common/Base/System/Io/IStream/hkIStream.h>
-#include <Common/Base/System/Io/Reader/hkStreamReader.h>
-#include <Common/Base/System/Io/OStream/hkOStream.h>
-#include <Common/Base/System/Io/Writer/hkStreamWriter.h>
 
-//#include <Common/Base/Reflection/Registry/hkDynamicClassNameRegistry.h>
 #include <Common/Base/Reflection/Registry/hkDefaultClassNameRegistry.h>
 
-// Serialize Loader
+#include <Common/Serialize/Util/hkLoader.h>
 #include <Common/Serialize/Util/hkSerializeUtil.h>
 #include <Common/Serialize/Util/hkRootLevelContainer.h>
-#include <Common/Serialize/Util/hkNativePackfileUtils.h>
-#include <Common/Serialize/Util/hkLoader.h>
-#include <Common/Serialize/Version/hkVersionPatchManager.h>
+
 #include <Common/Compat/Deprecated/Packfile/Binary/hkBinaryPackfileReader.h>
-#include <Common/Compat/Deprecated/Packfile/Xml/hkXmlPackfileReader.h>
 
 // Animation
 #include <Animation/Animation/hkaAnimationContainer.h>
-#include <Animation/Animation/Rig/hkaPose.h>
-#include <Animation/Animation/Rig/hkaSkeleton.h>
 #include <Animation/Animation/Rig/hkaSkeletonUtils.h>
+#include <Animation/Animation/Motion/Default/hkaDefaultAnimatedReferenceFrame.h>
 
 #include <Animation/Animation/Animation/SplineCompressed/hkaSplineCompressedAnimation.h>
 
@@ -38,44 +27,28 @@
 #pragma comment (lib, "hkSceneData.lib")
 #pragma comment (lib, "hkInternal.lib")
 #pragma comment (lib, "hkGeometryUtilities.lib")
-//o1: #pragma comment (lib, "hkVisualize.lib")
+
 #pragma comment (lib, "hkCompat.lib")
-#pragma comment (lib, "hkpCollide.lib")
-#pragma comment (lib, "hkpConstraintSolver.lib")
-#pragma comment (lib, "hkpDynamics.lib")
-#pragma comment (lib, "hkpInternal.lib")
-#pragma comment (lib, "hkpUtilities.lib")
-#pragma comment (lib, "hkpVehicle.lib")
+
+#pragma comment (lib, "hkcdCollide.lib")
+#pragma comment (lib, "hkcdInternal.lib")
+
 #pragma comment (lib, "hkaAnimation.lib")
-#pragma comment (lib, "hkaRagdoll.lib")
 #pragma comment (lib, "hkaInternal.lib")
-//o1: #pragma comment (lib, "hkgBridge.lib")
+
+void PlatformInit();
+void PlatformFileSystemInit();
 
 void HK_CALL errorReport(const char* msg, void* userContext)
 {
 	std::cerr << msg << std::endl;
 }
 
-hkResult hkSerializeUtilSave( hkVariant& root, hkOstream& stream )
-{
-	hkPackfileWriter::Options packFileOptions;
-	packFileOptions.m_layout = hkStructureLayout::MsvcWin32LayoutRules;
-
-	hkResult res;
-	__try
-	{
-		res = hkSerializeUtil::savePackfile( root.m_object, *root.m_class, stream.getStreamWriter(), packFileOptions );
-	}
-	__except (EXCEPTION_EXECUTE_HANDLER)
-	{
-		res = HK_FAILURE;
-	}
-	if ( res != HK_SUCCESS )
-	{
-		std::cerr << "Havok reports save failed.";
-	}
-	return res;
-}
+// Define a useful macro for this demo - it allow us to detect a failure, print a message, and return early
+#define RETURN_FAIL_IF(COND, MSG) \
+	HK_MULTILINE_MACRO_BEGIN \
+		if(COND) { HK_ERROR(0x53a6a026, MSG); return 1; } \
+	HK_MULTILINE_MACRO_END
 
 void read(hkIstream& stream, hkQsTransform& transform)
 {
@@ -238,6 +211,32 @@ void read(hkIstream& stream, hkaInterleavedUncompressedAnimation *anim)
 			annotation->m_text = buf;
 		}
 	}
+
+	hkBool hasExtractedMotion;
+	stream.read(&hasExtractedMotion, sizeof(hkBool));
+	if (hasExtractedMotion)
+	{
+		int frameType;
+		stream.read(&frameType, sizeof(int));
+		switch (frameType)
+		{
+		case 1:
+			{
+				hkRefPtr<hkaDefaultAnimatedReferenceFrame> defaultMotion = new hkaDefaultAnimatedReferenceFrame();
+				stream.read(&defaultMotion->m_up, sizeof(hkVector4));
+				stream.read(&defaultMotion->m_forward, sizeof(hkVector4));
+				stream.read(&defaultMotion->m_duration, sizeof(hkReal));
+				int numReferenceFrameSamples;
+				stream.read(&numReferenceFrameSamples, sizeof(int));
+				defaultMotion->m_referenceFrameSamples.setSize(numReferenceFrameSamples);
+				for (int i=0; i<numReferenceFrameSamples; i++)
+				{
+					stream.read(&defaultMotion->m_referenceFrameSamples[i], sizeof(hkVector4));
+				}
+				anim->setExtractedMotion(defaultMotion);
+			}
+		}
+	}
 }
 
 int save(const char* filename, const char* destname)
@@ -252,7 +251,7 @@ int save(const char* filename, const char* destname)
 	unsigned int version;
 	stream.read(&version, sizeof(unsigned int));
 
-	if (version != 0x01000200)
+	if (version != 0x03000200)
 	{
 		std::cerr << "Error: version mismatch! Abort.";
 		return 100;
@@ -288,7 +287,7 @@ int save(const char* filename, const char* destname)
 	hkRefPtr<hkaAnimationBinding> binding = new hkaAnimationBinding();
 	animCont->m_bindings.append(&binding, 1);
 
-	binding->m_originalSkeletonName = "NPC Root [Root]";
+	binding->m_originalSkeletonName = "Root";
 
 	hkRefPtr<hkaInterleavedUncompressedAnimation> anim = new hkaInterleavedUncompressedAnimation();
 	read(stream, anim);
@@ -307,9 +306,14 @@ int save(const char* filename, const char* destname)
 
 	animCont->m_animations.append(&binding->m_animation, 1);
 
-	hkVariant root = { &rootCont, &rootCont.staticClass() };
 	hkOstream deststream(destname);
-	hkSerializeUtilSave(root, deststream);
+
+	hkPackfileWriter::Options packFileOptions;
+	packFileOptions.m_writeMetaInfo = true;
+	//packFileOptions.m_layout = hkStructureLayout::MsvcWin32LayoutRules;
+	packFileOptions.m_layout = hkStructureLayout::MsvcAmd64LayoutRules;
+
+	hkSerializeUtil::savePackfile( &rootCont, hkRootLevelContainerClass, deststream.getStreamWriter(), packFileOptions );
 
 	return 0;
 }
@@ -366,3 +370,11 @@ int main( int argc, char *argv[], char *envp[] )
 
 	return ret;
 }
+
+#include <Common/Base/Config/hkProductFeaturesNoPatchesOrCompat.h>
+#include <Common/Base/Config/hkProductFeatures.cxx>
+#include <Common/Compat/Deprecated/Compat/hkCompat_None.cxx>
+
+// Platform specific initialization
+
+#include <Common/Base/System/Init/PlatformInit.cxx>

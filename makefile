@@ -1,6 +1,6 @@
 
-CPPFLAGS = /nologo /EHsc /MT /I ..\vendor\hk2010_2_0_r1\Source
-CONFLAGS = /nologo /LIBPATH:..\vendor\hk2010_2_0_r1\Lib\win32_net_9-0\release_multithreaded
+CPPFLAGS = /nologo /EHsc /MD /I ..\vendor\hk2014_1_0_r1\Source
+CONFLAGS = /nologo /LIBPATH:..\vendor\hk2014_1_0_r1\Lib\win32_vs2012_win7\release
 
 all: hkconv.exe hkdump.exe hkdump-bin.exe
 
