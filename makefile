@@ -8,10 +8,10 @@ clean:
 	rm *.obj
 
 hkconv.exe: conv.obj
-	link.exe $(CONFLAGS) /OUT:hkconv.exe conv.obj 
+	link.exe $(CONFLAGS) /OUT:hkconv.exe conv.obj legacy_stdio_definitions.lib
 
 hkdump.exe: dump.obj
-	link.exe $(CONFLAGS) /OUT:hkdump.exe dump.obj 
+	link.exe $(CONFLAGS) /OUT:hkdump.exe dump.obj legacy_stdio_definitions.lib
 
 hkdump-bin.exe: dump-bin.obj
-	link.exe $(CONFLAGS) /OUT:hkdump-bin.exe dump-bin.obj 
+	link.exe $(CONFLAGS) /OUT:hkdump-bin.exe dump-bin.obj legacy_stdio_definitions.lib

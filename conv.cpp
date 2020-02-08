@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <iostream>
+#include "stdio__iob_func.h"
 
 #include <Common/Base/keycode.cxx> 
 #include <Common/Base/Config/hkProductFeatures.cxx>
@@ -53,7 +53,7 @@
 
 void HK_CALL errorReport(const char* msg, void* userContext)
 {
-	std::cerr << msg << std::endl;
+	fputs(msg, stderr); fputs("\n", stderr);
 }
 
 hkResult hkSerializeUtilSave( hkVariant& root, hkOstream& stream )
@@ -72,7 +72,7 @@ hkResult hkSerializeUtilSave( hkVariant& root, hkOstream& stream )
 	}
 	if ( res != HK_SUCCESS )
 	{
-		std::cerr << "Havok reports save failed.";
+		fprintf(stderr, "Havok reports save failed.");
 	}
 	return res;
 }
@@ -254,7 +254,7 @@ int save(const char* filename, const char* destname)
 
 	if (version != 0x01000200)
 	{
-		std::cerr << "Error: version mismatch! Abort.";
+		fprintf(stderr, "Error: version mismatch! Abort.");
 		return 100;
 	}
 
@@ -267,7 +267,7 @@ int save(const char* filename, const char* destname)
 		hkRefPtr<hkaSkeleton> skeleton = new hkaSkeleton();
 		read(stream, skeleton);
 
-		std::cerr << "Error: #skeletons should be 0 but " << nskeletons << "! Abort.";
+		fprintf(stderr, "Error: #skeletons should be 0 but %ld! Abort.", nskeletons);
 		return 101;
 	}
 
@@ -276,7 +276,7 @@ int save(const char* filename, const char* destname)
 
 	if (nanimations != 1)
 	{
-		std::cerr << "Error: #animations should be 1 but " << nanimations << "! Abort.";
+		fprintf(stderr, "Error: #animations should be 1 but %ld! Abort.", nanimations);
 		return 101;
 	}
 

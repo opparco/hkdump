@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <iostream>
+#include "stdio__iob_func.h"
 
 #include <Common/Base/keycode.cxx> 
 #include <Common/Base/Config/hkProductFeatures.cxx>
@@ -51,7 +51,7 @@
 
 void HK_CALL errorReport(const char* msg, void* userContext)
 {
-	std::cerr << msg << std::endl;
+	fputs(msg, stderr); fputs("\n", stderr);
 }
 
 hkResource* hkSerializeUtilLoad( hkStreamReader* stream
@@ -335,7 +335,7 @@ void dump(const char* filename, const char* destname)
 	hkResource *resource = hkSerializeLoadResource(reader);
 	if (resource == NULL)
 	{
-		std::cerr << "File is not loadable" << std::endl;
+		fprintf(stderr, "File is not loadable\n");
 	}
 	else
 	{
